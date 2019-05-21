@@ -4,6 +4,8 @@ using Microsoft.ML;
 using SentimentAnalysisConsoleApp.DataStructures;
 using Common;
 using static Microsoft.ML.DataOperationsCatalog;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SentimentAnalysisConsoleApp
 {
@@ -38,13 +40,20 @@ namespace SentimentAnalysisConsoleApp
             var dataProcessPipeline = mlContext.Transforms.Text.FeaturizeText(outputColumnName: "Features", inputColumnName: nameof(SentimentIssue.Text));
 
             // STEP 3: Set the training algorithm, then create and config the modelBuilder                            
-            var trainer = mlContext.BinaryClassification.Trainers.SdcaLogisticRegression(labelColumnName: "Label", featureColumnName: "Features");
+            var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features");
             var trainingPipeline = dataProcessPipeline.Append(trainer);
             #endregion
 
             #region step4
+            var models = new List<ITransformer>();
+            for (var i = 0; i < 100; i++)
+            {
+                var model = trainingPipeline.Fit(trainingData);
+                models.Add(model);
+            }
+
             // STEP 4: Train the model fitting to the DataSet
-            ITransformer trainedModel = trainingPipeline.Fit(trainingData);
+            ITransformer trainedModel = models.First();
             #endregion
 
             #region step5
